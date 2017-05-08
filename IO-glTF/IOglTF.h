@@ -141,6 +141,7 @@ public:
 	static const utility::char_t *mimeType (const utility::char_t *szFilename) ;
 	// Online uri generator: http://bran.name/dump/data-uri-generator/
 	static const utility::string_t dataURI (const utility::string_t fileName) ;
+	static const utility::string_t dataURI(const utility::string_t shaderSrc, int notUsed);
 	static const utility::string_t dataURI (memoryStream<uint8_t> &stream) ;
 
 } ;

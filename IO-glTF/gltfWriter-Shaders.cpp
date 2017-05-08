@@ -67,8 +67,8 @@ bool gltfWriter::WriteShaders () {
 		
 		if ( GetIOSettings ()->GetBoolProp (IOSN_FBX_GLTF_EMBEDMEDIA, false) ) {
 			// data:[<mime type>][;charset=<charset>][;base64],<encoded data>
-			_json [U("shaders")] [vsName] [U("uri")] =web::json::value::string (IOglTF::dataURI (tech.vertexShader ().source ())) ;
-			_json [U("shaders")] [fsName] [U("uri")] =web::json::value::string (IOglTF::dataURI (tech.fragmentShader ().source ())) ;
+			_json [U("shaders")] [vsName] [U("uri")] =web::json::value::string (IOglTF::dataURI (tech.vertexShader ().source (),0)) ;
+			_json [U("shaders")] [fsName] [U("uri")] =web::json::value::string (IOglTF::dataURI (tech.fragmentShader ().source (), 0)) ;
 		} else {
 			FbxString gltfFilename (utility::conversions::to_utf8string (_fileName).c_str ()) ;
 			utility::string_t vsFilename =_json [U("shaders")] [vsName] [U("uri")].as_string () ;

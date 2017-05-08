@@ -281,6 +281,15 @@ void *_gltfFormatInfo (FbxWriter::EInfoRequest pRequest, int pId) {
 	return (U("application/octet-stream")) ;
 }
 
+/*static*/ const utility::string_t IOglTF::dataURI(const utility::string_t shaderSrc, int notUsed) {
+	// data:[<mime type>][;charset=<charset>][;base64],<encoded data>
+	notUsed = 1;
+	utility::string_t st(U("data:"));
+	st += U("text/plain,");
+	st += shaderSrc;
+	return (st);
+}
+
 /*static*/ const utility::string_t IOglTF::dataURI (const utility::string_t fileName) {
 	// data:[<mime type>][;charset=<charset>][;base64],<encoded data>
 	utility::string_t st (U ("data:")) ;
