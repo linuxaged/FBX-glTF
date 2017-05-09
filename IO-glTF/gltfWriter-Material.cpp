@@ -86,7 +86,7 @@ web::json::value gltfWriter::WriteMaterial (FbxNode *pNode, FbxSurfaceMaterial *
 		// IMPORTANT NOTE:
 		// Always check for the most complex class before the less one. In this case, Phong inherit from Lambert,
 		// so if we would be testing for lambert classid before phong, we would never enter the phong case.
-		// eh, Blinn–Phong shading model - The Blinn–Phong reflection model (also called the modified Phong reflection model) 
+		// eh, Blinnï¿½Phong shading model - The Blinnï¿½Phong reflection model (also called the modified Phong reflection model) 
 		// is a modification to the Phong reflection model
 		if ( pMaterial->Is<FbxSurfacePhong> () ) {
 			ret =WritePhongMaterial (pNode, pMaterial) ;
@@ -292,10 +292,10 @@ web::json::value gltfWriter::WritePhongMaterial (FbxNode *pNode, FbxSurfaceMater
 	MergeJsonObjects (ret, WriteMaterialParameter (U("diffuse"), pPhongSurface->Diffuse, pPhongSurface->DiffuseFactor.Get (), values, techniqueParameters)) ;
 	MergeJsonObjects (ret, WriteMaterialParameter (U("emission"), pPhongSurface->Emissive, pPhongSurface->EmissiveFactor.Get (), values, techniqueParameters)) ;
 	MergeJsonObjects (ret, WriteMaterialParameter (U("specular"), pPhongSurface->Specular, pPhongSurface->SpecularFactor.Get (), values, techniqueParameters)) ;
-	MergeJsonObjects (ret, WriteMaterialParameter (U("shininess"), pPhongSurface->Shininess, values, techniqueParameters)) ;
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("shininess"), pPhongSurface->Shininess, values, techniqueParameters)) ;
 	MergeJsonObjects (ret, WriteMaterialParameter (U("reflective"), pPhongSurface->Reflection, 1., values, techniqueParameters)) ;
-	MergeJsonObjects (ret, WriteMaterialParameter (U("reflectivity"), pPhongSurface->ReflectionFactor, values, techniqueParameters)) ;
-	MergeJsonObjects (ret, WriteMaterialParameter (U("transparent"), pPhongSurface->TransparentColor, 1., values, techniqueParameters)) ;
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("reflectivity"), pPhongSurface->ReflectionFactor, values, techniqueParameters)) ;
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("transparent"), pPhongSurface->TransparentColor, 1., values, techniqueParameters)) ;
 
 	// gltf - opaque is 1. / transparency is 0.
 	// pPhongSurface->TransparentColor // Transparent color property.
