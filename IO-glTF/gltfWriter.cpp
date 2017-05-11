@@ -478,6 +478,9 @@ web::json::value gltfWriter::WriteSceneNode (FbxNode *pNode, FbxPose *pPose) {
 	//}
 
 	FbxNodeAttribute::EType enodeType =nodeType (pNode) ;
+
+	ucout << U("node type: ") << utility::conversions::to_string_t(pNode->GetTypeName()) << std::endl;
+
 	if ( _routes.find (enodeType) == _routes.end () ) {
 		//if (   FbxString (pNode->GetName ()) != FbxString ("RootNode")
 		//	&& pNodeAttribute != nullptr

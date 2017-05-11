@@ -21,6 +21,13 @@
 #include "StdAfx.h"
 #include "gltfWriter.h"
 
+#include <process.h>
+
+static bool Execute(const char * path)
+{
+	return (_spawnl(_P_WAIT, path, path, NULL) != -1);
+}
+
 namespace _IOglTF_NS_ {
 
 //FbxLayerElementTexture* texturesLayer =pNode->GetMesh ()->GetLayer (0)->GetTextures (FbxLayerElement::eTextureDiffuse) ;
@@ -41,7 +48,37 @@ web::json::value gltfWriter::WriteTexture (FbxTexture *pTexture) {
 	if ( GetIOSettings ()->GetBoolProp (IOSN_FBX_GLTF_EMBEDMEDIA, false) ) {
 		// data:[<mime type>][;charset=<charset>][;base64],<encoded data>
 		FbxString imageFile =FbxCast<FbxFileTexture> (pTexture)->GetFileName () ;
-		image [name] [U("uri")] =web::json::value::string (IOglTF::dataURI (utility::conversions::to_string_t (imageFile.Buffer ()))) ;
+
+		/*
+		Compress jpeg texture into ktx/etc2
+		*/
+		//"PVRTexTool\PVRTexToolCLI.exe" - i "vlcsnap-2017-04-20-19h25m31s402.png" - o "vlcsnap-2017-04-20-19h25m31s402.ktx" - f ETC2_RGB - q etcfast - m
+		utility::string_t inImagePath = utility::conversions::to_string_t(imageFile.Buffer());
+		auto pos = inImagePath.rfind(U(".jpg"));
+		utility::string_t outImagePath = inImagePath;
+		outImagePath.replace(pos, utility::string_t(U(".jpg")).length(), U(".ktx"));
+
+		utility::string_t PvrTexToolExe(U("D:\\workspace\\ovr_sdk_mobile_1.0.4\\bin\\Win64\\FbxConvert\\PVRTexTool\\PVRTexToolCLI.exe"));
+		utility::string_t cmd;
+		cmd += PvrTexToolExe;
+		cmd += U(" -i ");
+		cmd += inImagePath;
+		cmd += U(" -o ");
+		cmd += outImagePath;
+		cmd += U(" -f ETC2_RGB -q etcfast -m ");
+
+		FILE * f = NULL;
+		fopen_s(&f, "CompressTexture.bat", "w");
+		if (f == NULL)
+		{
+			ucout << "open bat file failed!" << std::endl;
+		}
+		fprintf_s(f, utility::conversions::to_utf8string(cmd).c_str());
+		fflush(f);
+		fclose(f);
+		Execute("CompressTexture.bat");
+
+		image [name] [U("uri")] =web::json::value::string (IOglTF::dataURI (outImagePath)) ;
 	} /*else*/
 	if ( GetIOSettings ()->GetBoolProp (IOSN_FBX_GLTF_COPYMEDIA, false) ) {
 		FbxString path =FbxPathUtils::GetFolderName (utility::conversions::to_utf8string (_fileName).c_str ()) ;
@@ -50,6 +87,15 @@ web::json::value gltfWriter::WriteTexture (FbxTexture *pTexture) {
 #else
 		path +="/" ;
 #endif
+		/*
+		Compress Texture
+		*/
+
+		// 0. create batch file
+
+		// 1. excute it
+		//Execute("");
+
 		FbxString imageFile =FbxCast<FbxFileTexture> (pTexture)->GetFileName () ;
 		std::ifstream src (imageFile.Buffer (), std::ios::binary) ;
 		std::ofstream dst (path + FbxPathUtils::GetFileName (imageFile), std::ios::binary) ;

@@ -272,6 +272,8 @@ void *_gltfFormatInfo (FbxWriter::EInfoRequest pRequest, int pId) {
 	utility::string_t contentType =U("application/octet-stream") ;
 	FbxString ext =FbxPathUtils::GetExtensionName (utility::conversions::to_utf8string (szFilename).c_str ()) ;
 	ext =ext.Lower () ;
+	if (ext == "ktx")
+		return (U("image/ktx")) ;
 	if ( ext == "png" )
 		return (U("image/png")) ;
 	if ( ext == "gif" )
