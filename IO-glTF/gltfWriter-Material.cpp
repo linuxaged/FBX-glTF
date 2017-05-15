@@ -88,29 +88,30 @@ web::json::value gltfWriter::WriteMaterial (FbxNode *pNode, FbxSurfaceMaterial *
 		// so if we would be testing for lambert classid before phong, we would never enter the phong case.
 		// eh, Blinn�Phong shading model - The Blinn�Phong reflection model (also called the modified Phong reflection model) 
 		// is a modification to the Phong reflection model
-		if ( pMaterial->Is<FbxSurfacePhong> () ) {
-			ret =WritePhongMaterial (pNode, pMaterial) ;
-		} else if ( pMaterial->Is<FbxSurfaceLambert> () ) {
-			ret =WriteLambertMaterial (pNode, pMaterial) ;
-		} else { // use shading model
-			FbxString szShadingModel =pMaterial->ShadingModel.Get () ;
-			// shading models supported here are: "constant", "blinn"
-			// note that "lambert" and "phong" should have been treated above
-			// all others default to "phong"
-			if ( szShadingModel == "constant" ) {
-				ret =WriteConstantShadingModelMaterial (pNode, pMaterial) ;
-			} else if ( szShadingModel == "blinn" ) {
-				ret =WriteBlinnShadingModelMaterial (pNode, pMaterial) ;
-			} else {
-				// If has a CGFX implementation, export constant in profile common;
-				// And set path with NVidia extension
-				FbxImplementation *pImpl =pMaterial->GetDefaultImplementation () ;
-				if ( pImpl && pImpl->Language.Get () == FBXSDK_SHADING_LANGUAGE_CGFX )
-					ret =WriteDefaultShadingModelWithCGFXMaterial (pNode, pMaterial) ;
-				else
-					ret =WriteDefaultShadingModelMaterial (pNode, pMaterial) ;
-			}
-		}
+		ret = WriteBlinnShadingModelMaterial(pNode, pMaterial);
+		//if ( pMaterial->Is<FbxSurfacePhong> () ) {
+		//	ret =WritePhongMaterial (pNode, pMaterial) ;
+		//} else if ( pMaterial->Is<FbxSurfaceLambert> () ) {
+		//	ret =WriteLambertMaterial (pNode, pMaterial) ;
+		//} else { // use shading model
+		//	FbxString szShadingModel =pMaterial->ShadingModel.Get () ;
+		//	// shading models supported here are: "constant", "blinn"
+		//	// note that "lambert" and "phong" should have been treated above
+		//	// all others default to "phong"
+		//	if ( szShadingModel == "constant" ) {
+		//		ret =WriteConstantShadingModelMaterial (pNode, pMaterial) ;
+		//	} else if ( szShadingModel == "blinn" ) {
+		//		ret =WriteBlinnShadingModelMaterial (pNode, pMaterial) ;
+		//	} else {
+		//		// If has a CGFX implementation, export constant in profile common;
+		//		// And set path with NVidia extension
+		//		FbxImplementation *pImpl =pMaterial->GetDefaultImplementation () ;
+		//		if ( pImpl && pImpl->Language.Get () == FBXSDK_SHADING_LANGUAGE_CGFX )
+		//			ret =WriteDefaultShadingModelWithCGFXMaterial (pNode, pMaterial) ;
+		//		else
+		//			ret =WriteDefaultShadingModelMaterial (pNode, pMaterial) ;
+		//	}
+		//}
 	
 
 	web::json::value techniqueParameters =web::json::value::null () ;
@@ -387,13 +388,13 @@ web::json::value gltfWriter::WriteBlinnShadingModelMaterial (FbxNode *pNode, Fbx
 	MergeJsonObjects (ret, WriteMaterialParameter (U("emission"), pMaterial, FbxSurfaceMaterial::sEmissive, FbxSurfaceMaterial::sEmissiveFactor, values, techniqueParameters)) ;
 	MergeJsonObjects (ret, WriteMaterialParameter (U("specular"), pMaterial, FbxSurfaceMaterial::sSpecular, FbxSurfaceMaterial::sSpecularFactor, values, techniqueParameters)) ;
 	FbxPropertyT<FbxDouble> factorProperty =pMaterial->FindProperty (FbxSurfaceMaterial::sShininess, FbxDoubleDT, false) ;
-	MergeJsonObjects (ret, WriteMaterialParameter (U("shininess"), factorProperty, values, techniqueParameters)) ;
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("shininess"), factorProperty, values, techniqueParameters)) ;
 	FbxPropertyT<FbxDouble3> colorProperty =pMaterial->FindProperty (FbxSurfaceMaterial::sReflection, FbxDouble3DT, false) ;
 	MergeJsonObjects (ret, WriteMaterialParameter (U("reflective"), colorProperty, 1., values, techniqueParameters)) ;
 	factorProperty =pMaterial->FindProperty (FbxSurfaceMaterial::sReflectionFactor, FbxDoubleDT, false) ;
-	MergeJsonObjects (ret, WriteMaterialParameter (U("reflectivity"), factorProperty, values, techniqueParameters)) ;
-	colorProperty =pMaterial->FindProperty (FbxSurfaceMaterial::sTransparentColor, FbxDouble3DT, false) ;
-	MergeJsonObjects (ret, WriteMaterialParameter (U("transparent"), colorProperty, 1., values, techniqueParameters)) ;
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("reflectivity"), factorProperty, values, techniqueParameters)) ;
+	//colorProperty =pMaterial->FindProperty (FbxSurfaceMaterial::sTransparentColor, FbxDouble3DT, false) ;
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("transparent"), colorProperty, 1., values, techniqueParameters)) ;
 
 	// gltf - opaque is 1. / transparency is 0.
 	// pPhongSurface->TransparentColor // Transparent color property.

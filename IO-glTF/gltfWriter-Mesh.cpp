@@ -176,6 +176,7 @@ web::json::value gltfWriter::WriteMesh (FbxNode *pNode) {
 		// TODO: need to be revisited when glTF will support more than one material per layer/primitive
 		materialCount =materialCount == 0 ? 0 : 1 ;
 		for ( int i =0 ; i < materialCount ; i++ ) {
+			const char* tempNodeName = pNode->GetName();
 			web::json::value ret =WriteMaterial (pNode, pNode->GetMaterial (i)) ;
 			if ( ret.is_string () ) {
 				primitive [U("material")] =ret ;

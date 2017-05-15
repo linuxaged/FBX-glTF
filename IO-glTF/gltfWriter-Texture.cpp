@@ -58,7 +58,7 @@ web::json::value gltfWriter::WriteTexture (FbxTexture *pTexture) {
 		utility::string_t outImagePath = inImagePath;
 		outImagePath.replace(pos, utility::string_t(U(".jpg")).length(), U(".ktx"));
 
-		utility::string_t PvrTexToolExe(U("D:\\workspace\\ovr_sdk_mobile_1.0.4\\bin\\Win64\\FbxConvert\\PVRTexTool\\PVRTexToolCLI.exe"));
+		utility::string_t PvrTexToolExe(U("PVRTexTool\\PVRTexToolCLI.exe"));
 		utility::string_t cmd;
 		cmd += PvrTexToolExe;
 		cmd += U(" -i ");

@@ -25,7 +25,7 @@
 #endif
 
 #include <stdlib.h>
-#define _DEBUG_VERBOSE 1
+//#define _DEBUG_VERBOSE 1
 
 namespace _IOglTF_NS_ {
 
