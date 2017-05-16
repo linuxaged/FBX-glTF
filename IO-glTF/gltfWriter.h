@@ -139,6 +139,7 @@ protected:
 	web::json::value WritePhongMaterial (FbxNode *pNode, FbxSurfaceMaterial *pMaterial) ;
 	web::json::value WriteLambertMaterial (FbxNode *pNode, FbxSurfaceMaterial *pMaterial) ;
 	web::json::value WriteConstantShadingModelMaterial (FbxNode *pNode, FbxSurfaceMaterial *pMaterial) ;
+	web::json::value WriteYUVShadingModelMaterial(FbxNode *pNode, FbxSurfaceMaterial *pMaterial);
 	web::json::value WriteBlinnShadingModelMaterial (FbxNode *pNode, FbxSurfaceMaterial *pMaterial) ;
 	web::json::value WriteDefaultShadingModelWithCGFXMaterial (FbxNode *pNode, FbxSurfaceMaterial *pMaterial) ;
 	web::json::value WriteDefaultShadingModelMaterial (FbxNode *pNode, FbxSurfaceMaterial *pMaterial) ;

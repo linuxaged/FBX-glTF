@@ -58,6 +58,7 @@ public:
 	static const unsigned int FLOAT_MAT3 =35675 ;
 	static const unsigned int FLOAT_MAT4 =35676 ;
 	static const unsigned int SAMPLER_2D =35678 ;
+	static const unsigned int SAMPLER_OES = 35679;
 	static const unsigned int SAMPLER_CUBE =35680 ;
 	static const unsigned int FRAGMENT_SHADER =35632 ;
 	static const unsigned int VERTEX_SHADER =35633 ;
@@ -79,6 +80,7 @@ public:
 	static const utility::char_t *szMAT3 ;
 	static const utility::char_t *szMAT4 ;
 	static const utility::char_t *szSAMPLER_2D ;
+	static const utility::char_t *szSAMPLER_OES;
 	// bufferView::Target (https://github.com/KhronosGroup/glTF/blob/master/specification/bufferView.schema.json)
 	static const unsigned int ARRAY_BUFFER =34962 ;
 	static const unsigned int ELEMENT_ARRAY_BUFFER =34963 ;

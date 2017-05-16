@@ -110,6 +110,7 @@ bool IOglTF::SpecificInitialize () {
 /*static*/ const utility::char_t *IOglTF::szMAT3 =U("MAT3") ;
 /*static*/ const utility::char_t *IOglTF::szMAT4 =U("MAT4") ;
 /*static*/ const utility::char_t *IOglTF::szSAMPLER_2D =U("sampler2D") ;
+/*static*/ const utility::char_t *IOglTF::szSAMPLER_OES = U("samplerExternalOES");
 #ifdef __APPLE__
 /*static*/ const unsigned int IOglTF::ARRAY_BUFFER ;
 /*static*/ const unsigned int IOglTF::ELEMENT_ARRAY_BUFFER ;
@@ -202,6 +203,7 @@ void *_gltfFormatInfo (FbxWriter::EInfoRequest pRequest, int pId) {
 		case INT_VEC2:
 		case BOOL_VEC2:
 		case SAMPLER_2D:
+		case SAMPLER_OES:
 			return (szVEC2) ;
 		case FLOAT_VEC3:
 		case INT_VEC3:
@@ -259,6 +261,8 @@ void *_gltfFormatInfo (FbxWriter::EInfoRequest pRequest, int pId) {
 		case FLOAT_MAT4:
 			szType =szMAT4 ;
 			break ;
+		case SAMPLER_OES:
+			return (szSAMPLER_OES) ;
 		case SAMPLER_2D:
 			return (szSAMPLER_2D) ;
 		default:

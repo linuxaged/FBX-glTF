@@ -88,7 +88,16 @@ web::json::value gltfWriter::WriteMaterial (FbxNode *pNode, FbxSurfaceMaterial *
 		// so if we would be testing for lambert classid before phong, we would never enter the phong case.
 		// eh, Blinn�Phong shading model - The Blinn�Phong reflection model (also called the modified Phong reflection model) 
 		// is a modification to the Phong reflection model
-		ret = WriteBlinnShadingModelMaterial(pNode, pMaterial);
+
+		//if ( pNode->GetName() == "screen 0" )
+		//{
+
+		//}
+		//else
+		{
+			ret = WriteBlinnShadingModelMaterial(pNode, pMaterial);
+		}
+		
 		//if ( pMaterial->Is<FbxSurfacePhong> () ) {
 		//	ret =WritePhongMaterial (pNode, pMaterial) ;
 		//} else if ( pMaterial->Is<FbxSurfaceLambert> () ) {
@@ -268,7 +277,16 @@ web::json::value gltfWriter::WriteMaterialParameter (const utility::char_t *pszN
 	if ( property.IsValid () && property.GetSrcObjectCount<FbxTexture> () != 0 ) {
 		FbxTexture *pTexture =property.GetSrcObject<FbxTexture> (0) ;
 		values [pszName] =web::json::value::string (createTextureName (pTexture->GetName ())) ;
-		techniqueParameters [pszName] =web::json::value::object ({{ U("type"), IOglTF::SAMPLER_2D }}) ;
+		ucout << pMaterial->GetName() ;
+		if (strncmp(pMaterial->GetName(), "spheremtl", 9) == 0)
+		{
+			techniqueParameters[pszName] = web::json::value::object({ { U("type"), IOglTF::SAMPLER_OES } });
+		}
+		else
+		{
+			techniqueParameters[pszName] = web::json::value::object({ { U("type"), IOglTF::SAMPLER_2D } });
+		}
+		
 		ret =WriteTexture (pTexture) ;
 	} else {
 		FbxProperty factorProperty =pMaterial->FindProperty (factorName, FbxDoubleDT, false) ;
@@ -376,6 +394,42 @@ web::json::value gltfWriter::WriteConstantShadingModelMaterial (FbxNode *pNode, 
 
 	MergeJsonObjects (ret, web::json::value::object ({ { U("values"), values }, { U("techniqueParameters"), techniqueParameters } })) ;
 	return (ret) ;
+}
+
+// for movie texture
+web::json::value gltfWriter::WriteYUVShadingModelMaterial(FbxNode *pNode, FbxSurfaceMaterial *pMaterial) {
+	web::json::value values = web::json::value::object();
+	web::json::value techniqueParameters = web::json::value::object();
+
+	web::json::value ret = web::json::value::object();
+	MergeJsonObjects(ret, WriteMaterialParameter(U("ambient"), pMaterial, FbxSurfaceMaterial::sAmbient, FbxSurfaceMaterial::sAmbientFactor, values, techniqueParameters));
+	MergeJsonObjects(ret, WriteMaterialParameter(U("diffuse"), pMaterial, FbxSurfaceMaterial::sDiffuse, FbxSurfaceMaterial::sDiffuseFactor, values, techniqueParameters));
+	MergeJsonObjects(ret, WriteMaterialParameter(U("emission"), pMaterial, FbxSurfaceMaterial::sEmissive, FbxSurfaceMaterial::sEmissiveFactor, values, techniqueParameters));
+	MergeJsonObjects(ret, WriteMaterialParameter(U("specular"), pMaterial, FbxSurfaceMaterial::sSpecular, FbxSurfaceMaterial::sSpecularFactor, values, techniqueParameters));
+	FbxPropertyT<FbxDouble> factorProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sShininess, FbxDoubleDT, false);
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("shininess"), factorProperty, values, techniqueParameters)) ;
+	FbxPropertyT<FbxDouble3> colorProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sReflection, FbxDouble3DT, false);
+	MergeJsonObjects(ret, WriteMaterialParameter(U("reflective"), colorProperty, 1., values, techniqueParameters));
+	factorProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sReflectionFactor, FbxDoubleDT, false);
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("reflectivity"), factorProperty, values, techniqueParameters)) ;
+	//colorProperty =pMaterial->FindProperty (FbxSurfaceMaterial::sTransparentColor, FbxDouble3DT, false) ;
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("transparent"), colorProperty, 1., values, techniqueParameters)) ;
+
+	// gltf - opaque is 1. / transparency is 0.
+	// pPhongSurface->TransparentColor // Transparent color property.
+	// pPhongSurface->TransparencyFactor // Transparency factor property. This property is used to make a surface more or less opaque (0 = opaque, 1 = transparent).
+	factorProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sTransparencyFactor, FbxDoubleDT, false);
+	MergeJsonObjects(ret, WriteMaterialTransparencyParameter(
+		U("transparency"),
+		factorProperty, colorProperty, pMaterial->FindProperty("Opacity"),
+		values, techniqueParameters
+		));
+
+	// Note: 
+	// INDEXOFREFRACTION is not supported by FBX.
+
+	MergeJsonObjects(ret, web::json::value::object({ { U("values"), values }, { U("techniqueParameters"), techniqueParameters } }));
+	return (ret);
 }
 
 web::json::value gltfWriter::WriteBlinnShadingModelMaterial (FbxNode *pNode, FbxSurfaceMaterial *pMaterial) {

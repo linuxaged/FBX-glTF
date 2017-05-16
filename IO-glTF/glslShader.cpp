@@ -341,7 +341,7 @@ void glslTech::texcoords (web::json::value technique) {
 			utility::string_t slotColorSymbol =U("u_") + slot ;
 			_fragmentShader.appendCode (U("%s =%s ;\n"), slot.c_str (), slotColorSymbol.c_str ()) ;
 			//_fragmentShader.addUniformValue (slotType, 1, slot) ;
-		} else if ( slotType == IOglTF::SAMPLER_2D ) {
+		} else if ( slotType == IOglTF::SAMPLER_2D || slotType == IOglTF::SAMPLER_OES ) {
 			utility::string_t semantic =technique [U("extras")] [U("texcoordBindings")] [slot].as_string () ;
 			utility::string_t texSymbol, texVSymbol ;
 			if ( slot == U("reflective") ) {
