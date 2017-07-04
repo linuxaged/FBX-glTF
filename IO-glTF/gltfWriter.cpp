@@ -54,13 +54,13 @@ utility::string_t GetJsonObjectKeyAt (web::json::value &a, int i) {
 	{ FbxNodeAttribute::eLight, &gltfWriter::WriteLight }, // Light
 	{ FbxNodeAttribute::eMesh, &gltfWriter::WriteMesh }, // Mesh
 //	{ FbxNodeAttribute::eLine, &gltfWriter::WriteLine }, // Mesh
+	{ FbxNodeAttribute::eSkeleton, &gltfWriter::WriteSkeleton},//Skeleton
 	{ FbxNodeAttribute::eNull, &gltfWriter::WriteNull } // Null
 
 	// Marker // Not implemented in COLLADA / glTF.
 	// CameraSwitcher // Not implemented in COLLADA / glTF.
 	//FbxNodeAttribute::eNurbs -> converted to Mesh // Not implemented in COLLADA / glTF.
 	//FbxNodeAttribute::ePatch -> converted to Mesh // Not implemented in COLLADA / glTF.
-	//FbxNodeAttribute::eSkeleton
 	//FbxNodeAttribute::eMarker
 } ;
 
@@ -140,12 +140,12 @@ bool gltfWriter::Write (FbxDocument *pDocument) {
 		return (false) ;
 
 	FbxDocumentInfo *pSceneInfo =pScene->GetSceneInfo () ;
+	if ( !WriteAnimation (pScene) )
+		return (false) ;
 	if ( !WriteAsset (pSceneInfo) )
 		return (false) ;
 	if ( !WriteScene (pScene) )
 		return (false) ;
-	//if ( !ExportAnimation (pScene->GetRootNode ()) )
-	//	return (false) ;
 	//if ( !ExportLibraries () )
 	//	return (false) ;
 
@@ -259,6 +259,7 @@ void gltfWriter::PreprocessNodeRecursive (FbxNode *pNode) {
 		if ( attributeType == FbxNodeAttribute::eNurbs || attributeType == FbxNodeAttribute::ePatch ) {
 			FbxGeometryConverter geometryConverter (&mManager) ;
 			//geometryConverter.TriangulateInPlace (pNode) ;
+	std::cout<< "geometry converter ..... triangualte" << std::endl;
 			FbxMesh *pMesh =pNode->GetMesh () ;
 			pMesh =FbxCast<FbxMesh>(geometryConverter.Triangulate (pMesh, true)) ;
 		}
@@ -369,10 +370,13 @@ utility::string_t gltfWriter::nodeId (FbxNode *pNode, bool bNodeAttribute /*=fal
 	) ;
 	if ( name == U("") )
 		name =utility::conversions::to_string_t (pNode->GetTypeName ()) ;
-	//if ( isKnownId (name) ) // Comment if it should be consistent?
+	if ( isKnownId (name) ) // Comment if it should be consistent?
 		name +=U("_") + utility::conversions::to_string_t ((int)id) ;
 	if ( bRecord )
 		recordId (id, name) ;
+
+	spaceToUnderscore(name);
+
 	return (name) ;
 }
 
@@ -384,6 +388,12 @@ utility::string_t gltfWriter::registerName (utility::string_t name) {
 
 bool gltfWriter::isNameRegistered (utility::string_t id) {
 	return (std::find (_registeredNames.begin (), _registeredNames.end (), id) != _registeredNames.end ()) ;
+}
+
+void gltfWriter::spaceToUnderscore(utility::string_t& name) {
+std::transform (name.begin(), name.end(), name.begin(), [](char ch) {
+        return ch == ' ' ? '_' : ch;
+        });
 }
 
 utility::string_t gltfWriter::createUniqueName (utility::string_t type, FbxUInt64 id) {
@@ -405,8 +415,8 @@ web::json::value gltfWriter::WriteSceneNodeRecursive (FbxNode *pNode, FbxPose *p
 	//	//return (GetStatus ().SetCode (FbxStatus::eFailure, "Could not export node " + pNode->GetName () + "!"), false) ;
 	//	return (false) ;
 #ifdef _DEBUG_VERBOSE
-	utility::string_t name =utility::conversions::to_string_t (pNode->GetNameOnly ().Buffer ()) ;
-	_path.push_back (name) ;
+	//utility::string_t name =utility::conversions::to_string_t (pNode->GetNameOnly ().Buffer ()) ;
+	//_path.push_back (name) ;
 #endif
 
 	web::json::value node =WriteSceneNode (pNode, pPose) ;
@@ -464,9 +474,36 @@ web::json::value gltfWriter::WriteSceneNodeRecursive (FbxNode *pNode, FbxPose *p
 	}
 
 #ifdef _DEBUG_VERBOSE
-	_path.pop_back () ;
+	//_path.pop_back () ;
 #endif
 	return (node) ;
+}
+
+web::json::value gltfWriter::WriteSkinArray(FbxNode *pNode, std::vector<FbxAMatrix> inverseBindMatrices, int skinAccessorCount, utility::string_t suffix) {
+
+   utility::string_t skinAccName;
+   web::json::value ret;
+   web::json::value accessorsAndBufferViews =web::json::value::object ({
+                { U("accessors"), web::json::value::object () },
+                { U("bufferViews"), web::json::value::object () }
+        }) ;
+
+    skinAccName = utility::conversions::to_string_t (U("_skinAccessor_")) ;
+    skinAccName += utility::conversions::to_string_t (suffix) ;
+    skinAccName += utility::conversions::to_string_t ((int)skinAccessorCount);
+
+    std::vector<float> inverseBindMatricesValues;
+
+    for(auto i=0; i < inverseBindMatrices.size(); i++)
+	for(auto j=0; j< 4; j++)
+		for (auto k=0;k<4;k++)
+			inverseBindMatricesValues.push_back(inverseBindMatrices[i].mData[j][k]);
+	
+    web::json::value skinAccessor =WriteArray <float>(inverseBindMatricesValues, 16, pNode, skinAccName.c_str(), 2) ;
+    ret = web::json::value::string (GetJsonFirstKey (skinAccessor [U("accessors")])) ;
+    MergeJsonObjects (accessorsAndBufferViews, skinAccessor) ;
+    MergeJsonObjects (_json, accessorsAndBufferViews) ;
+return ret;
 }
 
 web::json::value gltfWriter::WriteSceneNode (FbxNode *pNode, FbxPose *pPose) {
@@ -543,18 +580,18 @@ web::json::value gltfWriter::GetTransform (FbxNode *pNode) {
 
 	// If the mesh is a skin binded to a skeleton, the bind pose will include its transformations.
 	// In that case, do not export the transforms twice.
-	//if (   pNode->GetNodeAttribute ()
-	//	&& pNode->GetNodeAttribute ()->GetAttributeType () == FbxNodeAttribute::eMesh
-	//) {
-	//	int deformerCount =FbxCast<FbxMesh>(pNode->GetNodeAttribute ())->GetDeformerCount (FbxDeformer::eSkin) ;
-	//	_ASSERTE( deformerCount <= 1 ) ; // "Unexpected number of skin greater than 1") ;
-	//	int clusterCount =0 ;
-	//	// It is expected for deformerCount to be equal to 1
-	//	for ( int i =0 ; i < deformerCount ; ++i )
-	//		clusterCount +=FbxCast<FbxSkin>(FbxCast<FbxMesh>(pNode->GetNodeAttribute ())->GetDeformer (i, FbxDeformer::eSkin))->GetClusterCount () ;
-	//	if ( clusterCount )
-	//		return (true) ;
-	//}
+	/*if (   pNode->GetNodeAttribute ()
+		&& pNode->GetNodeAttribute ()->GetAttributeType () == FbxNodeAttribute::eSkeleton
+	) {
+		int deformerCount =FbxCast<FbxMesh>(pNode->GetNodeAttribute ())->GetDeformerCount (FbxDeformer::eSkin) ;
+		_ASSERTE( deformerCount <= 1 ) ; // "Unexpected number of skin greater than 1") ;
+		int clusterCount =0 ;
+		// It is expected for deformerCount to be equal to 1
+		for ( int i =0 ; i < deformerCount ; ++i )
+			clusterCount +=FbxCast<FbxSkin>(FbxCast<FbxMesh>(pNode->GetNodeAttribute ())->GetDeformer (i, FbxDeformer::eSkin))->GetClusterCount () ;
+		if ( clusterCount )
+			return (true) ;
+	}*/
 
 	FbxAMatrix identity ;
 	identity.SetIdentity () ;
@@ -591,25 +628,71 @@ web::json::value gltfWriter::WriteNode (FbxNode *pNode) {
 	
 	// A floating-point 4x4 transformation matrix stored in column-major order.
 	// A node will have either a matrix property defined or any combination of rotation, scale, and translation properties defined.
-	web::json::value nodeTransform =GetTransform (pNode) ;
-	//if ( !nodeTransform.is_boolean () || nodeTransform != true )
+	// If the mesh is a skin binded to a skeleton, the bind pose will include its transformations.
+	// In that case, do not export the transforms twice.
+	const FbxNodeAttribute *nodeAttr =pNode->GetNodeAttribute () ;
+	if ( nodeAttr && nodeAttr->GetAttributeType () != FbxNodeAttribute::eSkeleton ) {
+		web::json::value nodeTransform =GetTransform (pNode) ;
 		nodeDef [U("matrix")] =nodeTransform ;
+	}
 	//nodeDef [U("rotation")] =web::json::value::array ({{ 1., 0., 0., 0. }}) ;
 	//nodeDef [U("scale")] =web::json::value::array ({{ 1., 1., 1. }}) ;
 	//nodeDef [U("translation")] =web::json::value::array ({{ 0., 0., 0. }}) ;
 
 	nodeDef [U("children")] =web::json::value::array () ;
 	//nodeDef [U("instanceSkin")] = ;
+		// Link skin and mesh in gltf file
 
 	const FbxNodeAttribute *nodeAttribute =pNode->GetNodeAttribute () ;
 	if ( nodeAttribute && nodeAttribute->GetAttributeType () == FbxNodeAttribute::eSkeleton ) {
 		// The only difference between a node containing a nullptr and one containing a SKELETON is the property type JOINT.
-		nodeDef [U("jointName")] =web::json::value::string (U("JOINT")) ;
+		//nodeDef [U("jointName")] =web::json::value::string (U("JOINT")) ;
+		nodeDef [U("jointName")] =web::json::value::string (id) ;
+		web::json::value translation;
+		web::json::value rotation;
+		web::json::value scale;
+
+
+		FbxAMatrix localAffineMtx = pNode->EvaluateGlobalTransform();
+		FbxMatrix localMtx(localAffineMtx);
+
+		// Decompose.
+		double sign; 
+		FbxVector4 T, S, Sh;
+		FbxQuaternion Rq;
+		localMtx.GetElements(T, Rq, Sh, S, sign);
+		FbxDouble3 trans, scale1;
+		FbxDouble4 rot;
+
+		// Store
+		for (int i = 0; i < 3; i++) translation[translation.size()] = T[i];
+		for (int i = 0; i < 4; i++) rotation[rotation.size()]= Rq.GetAt(i);
+		for (int i = 0; i < 3; i++) scale[scale.size()] = 1;
+
+
+		nodeDef [U("translation")] =translation;
+		nodeDef [U("rotation")] =rotation;
+		nodeDef [U("scale")] =scale;
+
+
+		//FbxSkeleton* lSkeleton = (FbxSkeleton*) pNode->GetNodeAttribute();
+		//if (lSkeleton->GetSkeletonType() == FbxSkeleton::eRoot){
+		//	rootJoint = utility::conversions::to_string_t (id);
+		//}
 	}
-	
 	//if ( szType == U("mesh") )
-	if ( pNode->GetNodeAttribute () && pNode->GetNodeAttribute ()->GetAttributeType () == FbxNodeAttribute::eMesh )
+	if ( pNode->GetNodeAttribute () && pNode->GetNodeAttribute ()->GetAttributeType () == FbxNodeAttribute::eMesh ){
 		nodeDef [U("meshes")] =web::json::value::array ({{ web::json::value (nodeId (pNode, true)) }}) ;
+		// Link skin and mesh in gltf file
+		utility::string_t skinName;
+		web::json::value skeletons;
+		skinName  = utility::conversions::to_string_t (id);
+		skinName += utility::conversions::to_string_t (U("_skin")) ;
+		nodeDef [U("skin")] =web::json::value::string (skinName);
+		skeletons[skeletons.size()] = _jointNames[0];
+		nodeDef [U("skeletons")] = skeletons;
+	}
+		//}
 	//if ( szType == U("camera") || szType == U("light") )
 	if (   pNode->GetNodeAttribute ()
 		&& (   pNode->GetNodeAttribute ()->GetAttributeType () == FbxNodeAttribute::eCamera

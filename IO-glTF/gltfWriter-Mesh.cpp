@@ -79,20 +79,54 @@ web::json::value gltfWriter::WriteMesh (FbxNode *pNode) {
 ////	{ U("colors"), web::json::value::object () }
 ////}) ;
 	web::json::value localAccessorsAndBufferViews =web::json::value::object () ;
+	std::vector<std::string> jointNames;
+	for(int i=0; i < _jointNames.size(); i++)
+		jointNames.push_back(_jointNames[i].as_string());
 
 	gltfwriterVBO vbo (pMesh) ;
+	vbo.setJointNames(jointNames);
 	vbo.GetLayerElements (true) ;
 	vbo.indexVBO () ;
 
 	std::vector<unsigned short> out_indices =vbo.getIndices () ;
 	std::vector<FbxDouble3> out_positions =vbo.getPositions () ;
+	std::vector<FbxDouble4> out_joints=vbo.getJoints () ;
+	std::vector<FbxDouble4> out_weights =vbo.getWeights () ;
 	std::vector<FbxDouble3> out_normals =vbo.getNormals () ;
 	std::vector<FbxDouble2> out_uvs =vbo.getUvs () ;
 	std::vector<FbxDouble3> out_tangents =vbo.getTangents () ;
 	std::vector<FbxDouble3> out_binormals =vbo.getBinormals () ;
 	std::vector<FbxColor> out_vcolors =vbo.getVertexColors () ;
+	std::vector<FbxAMatrix> inverseBindMatrices = vbo.getInverseBindMatrices();
 
 	_uvSets =vbo.getUvSets () ;
+
+	//skin
+	if (pMesh->GetDeformerCount(FbxDeformer::eSkin)) {
+
+		web::json::value skins = web::json::value::object ();
+		FbxAMatrix globalPosition;
+		web::json::value shapeMat;
+		for (int row=0; row<4; row++) 
+			for(int col=0;col<4;col++) 
+				shapeMat[shapeMat.size()] = web::json::value::number((int)globalPosition.Get(row,col));
+
+		utility::string_t skinName;
+		skinName  = utility::conversions::to_string_t (nodeId(pMesh->GetNode()));
+		skinName += utility::conversions::to_string_t (U("_skin")) ;
+		skins[skinName][U("bindShapeMatrix")] = shapeMat;
+		skins[skinName][U("inverseBindMatrices")] = WriteSkinArray(pMesh->GetNode(), inverseBindMatrices, 1, "skin");
+		skins[skinName][U("jointNames")] = _jointNames;
+		_json[U("skins")] = skins;
+
+		web::json::value vertexJoints =WriteArrayWithMinMax<FbxDouble4, float> (out_joints, pMesh->GetNode (), U("_Joints")) ;
+		MergeJsonObjects (localAccessorsAndBufferViews, vertexJoints);
+		primitive [U("attributes")] [U("JOINT")] =web::json::value::string (GetJsonFirstKey (vertexJoints [U("accessors")])) ;
+
+		web::json::value vertexWeights =WriteArrayWithMinMax<FbxDouble4, float> (out_weights, pMesh->GetNode (), U("_Weights")) ;
+		MergeJsonObjects (localAccessorsAndBufferViews, vertexWeights);
+		primitive [U("attributes")] [U("WEIGHT")] =web::json::value::string (GetJsonFirstKey (vertexWeights [U("accessors")])) ;
+	}
 
 	web::json::value vertex =WriteArrayWithMinMax<FbxDouble3, float> (out_positions, pMesh->GetNode (), U("_Positions")) ;
 	MergeJsonObjects (localAccessorsAndBufferViews, vertex);
@@ -152,7 +186,8 @@ web::json::value gltfWriter::WriteMesh (FbxNode *pNode) {
 
 			utility::string_t techniqueName =GetJsonFirstKey (ret [U("techniques")]) ;
 			web::json::value techniqueParameters =ret [U("techniques")] [techniqueName] [U("parameters")] ;
-			AdditionalTechniqueParameters (pNode, techniqueParameters, out_normals.size () != 0) ;
+
+			AdditionalTechniqueParameters (pNode, techniqueParameters, out_normals.size () != 0, pMesh->GetDeformerCount(FbxDeformer::eSkin)) ;
 			TechniqueParameters (pNode, techniqueParameters, primitive [U("attributes")], localAccessorsAndBufferViews [U("accessors")], false) ;
 			ret =WriteTechnique (pNode, nullptr, techniqueParameters) ;
 			//MergeJsonObjects (techniques, ret) ;
@@ -194,7 +229,7 @@ web::json::value gltfWriter::WriteMesh (FbxNode *pNode) {
 
 			utility::string_t techniqueName =GetJsonFirstKey (ret [U("techniques")]) ;
 			web::json::value techniqueParameters =ret [U("techniques")] [techniqueName] [U("parameters")] ;
-			AdditionalTechniqueParameters (pNode, techniqueParameters, out_normals.size () != 0) ;
+			AdditionalTechniqueParameters (pNode, techniqueParameters, out_normals.size () != 0, pMesh->GetDeformerCount(FbxDeformer::eSkin)) ;
 			TechniqueParameters (pNode, techniqueParameters, primitive [U("attributes")], localAccessorsAndBufferViews [U("accessors")]) ;
 			ret =WriteTechnique (pNode, pNode->GetMaterial (i), techniqueParameters) ;
 			//MergeJsonObjects (techniques, ret) ;
@@ -211,9 +246,9 @@ web::json::value gltfWriter::WriteMesh (FbxNode *pNode) {
 
 	web::json::value lib =web::json::value::object ({ { nodeId (pNode, true, true), meshDef } }) ;
 
-	web::json::value node =WriteNode (pNode) ;
 	//if ( pMesh->GetShapeCount () )
 	//	WriteControllerShape (pMesh) ; // Create a controller
+	web::json::value node =WriteNode (pNode) ;
 
 	web::json::value ret =web::json::value::object ({ { U("meshes"), lib }, { U("nodes"), node } }) ;
 	MergeJsonObjects (ret, accessorsAndBufferViews) ;

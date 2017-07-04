@@ -93,18 +93,30 @@ void glslShader::appendCode (const char *format, ...) {
 	va_end (args) ;
 }
 
+#if defined(_WIN32) || defined(_WIN64)
 void glslShader::appendCode (const utility::char_t *format, ...) {
 	utility::char_t buffer [1000] ;
 	va_list args ;
+
 	va_start (args, format) ;
-#if defined(_WIN32) || defined(_WIN64)
 	_vstprintf_s (buffer, format, args) ;
-#else
-	vsprintf (buffer, format, args) ;
-#endif
+
 	_body +=buffer ;
 	va_end (args) ;
 }
+#else
+void glslShader::appendCode (const wchar_t *format, ...) {
+	wchar_t buffer [1000] ;
+	va_list args ;
+
+	va_start (args, format) ;
+	vswprintf (buffer, 1000, format, args) ;
+
+	_body +=(char *)buffer ;
+	va_end (args) ;
+}
+#endif
+
 
 //void glslShader::appendCode (const utility::char_t *code) {
 //	_body +=code ;
@@ -191,7 +203,7 @@ const utility::string_t glslTech::needsVarying (const utility::char_t *semantic)
 
 /*static*/ bool glslTech::isVertexShaderSemantic (const utility::char_t *semantic) {
 	static utility::string_t vs_semantics [] ={
-		U("^position$"), U("^normal$"), U("^normalMatrix$"), U("^modelViewMatrix$"), U("^projectionMatrix$"),
+		U("^position$"), U("^normal$"), U("^weight$"), U("^joint$"), U("^jointMat$"),U("^normalMatrix$"), U("^modelViewMatrix$"), U("^projectionMatrix$"),
 		U("^texcoord([0-9]+)$"), U("^light([0-9]+)Transform$")
 	} ;
 	int nb =sizeof (vs_semantics) / sizeof (utility::string_t) ;
@@ -229,7 +241,12 @@ void glslTech::prepareParameters (web::json::value technique) {
 			if ( bIsAttribute )
 				_vertexShader.addAttribute (iter->first, iType) ;
 			else
-				_vertexShader.addUniform (iter->first, iType) ;
+				 if(iter->first == U("jointMat") ) {
+					unsigned int matSize =iter->second.as_object () [U("count")].as_integer () ;
+					utility::string_t jointMat =glslTech::format (U("%s[%d]"), iter->first.c_str(), matSize) ;
+					_vertexShader.addUniform (jointMat, iType) ;
+				 } else 
+					_vertexShader.addUniform (iter->first, iType) ;
 			utility::string_t v =needsVarying (iter->first.c_str ()) ;
 			if ( v != U("") ) {
 				_vertexShader.addVarying (iter->first, iType) ;
@@ -511,8 +528,8 @@ void glslTech::lighting2 (web::json::value technique, web::json::value gltf) {
 						_fragmentShader.appendCode (U("float cosAngle =dot (vec3 (0., 0., -1.), normalize (spotPosition.xyz)) ;\n")) ;
 						// doing this cos each pixel is just wrong (for performance)
 						// need to find a way to specify that we pass the cos of a value
-						_fragmentShader.appendCode (U("if ( cosAngle > cos (radians (u_%s * 0.5)) ) {\n"), szLightFallOffAngle) ;
-						_fragmentShader.appendCode (U("attenuation *=max (0., pow (cosAngle, u_%s)) ;\n"), szLightFallOffExponent) ;
+						_fragmentShader.appendCode (U("if ( cosAngle > cos (radians (u_%s * 0.5)) ) {\n"), szLightFallOffAngle.c_str()) ;
+						_fragmentShader.appendCode (U("attenuation *=max (0., pow (cosAngle, u_%s)) ;\n"), szLightFallOffExponent.c_str()) ;
 					}
 
 					// We handle phong, blinn, constant and lambert

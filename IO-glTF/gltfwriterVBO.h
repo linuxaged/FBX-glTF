@@ -38,6 +38,8 @@ namespace _IOglTF_NS_ {
 class gltfwriterVBO {
 	struct PackedVertex {
 		FbxDouble3 _position ;
+		FbxDouble4 _joint ;
+		FbxDouble4 _weight;
 		FbxDouble2 _uv ;
 		FbxDouble3 _normal ;
 		FbxDouble3 _tangent ;
@@ -49,6 +51,8 @@ class gltfwriterVBO {
 	} ;
 	std::vector<unsigned short> _in_indices, _out_indices ;
 	std::vector<FbxDouble3> _in_positions, _out_positions ; // babylon.js does not like homogeneous coordinates (i.e. FbxDouble4)
+	std::vector<FbxDouble4> _in_joints, _out_joints ; 
+	std::vector<FbxDouble4> _in_weights, _out_weights ; 
 	std::vector<FbxDouble2> _in_uvs, _out_uvs ;
 	std::vector<FbxDouble3> _in_normals, _out_normals ;
 	std::vector<FbxDouble3> _in_tangents, _out_tangents ;
@@ -56,6 +60,16 @@ class gltfwriterVBO {
 	std::vector<FbxColor> _in_vcolors, _out_vcolors ;
 	std::map<utility::string_t, utility::string_t> _uvSets ;
 	FbxMesh *_pMesh ;
+	std::vector<std::string> _jointNames;
+	std::vector<FbxAMatrix> _inverseBindMatrices;
+	std::map<int, std::vector<double>> _skinJointIndexes;
+        std::map<int, std::vector<double>> _skinVertexWeights;
+	void MatrixAdd(FbxAMatrix& pDstMatrix, FbxAMatrix& pSrcMatrix);
+	void MatrixAddToDiagonal(FbxAMatrix& pMatrix, double pValue);
+	void MatrixScale(FbxAMatrix& pMatrix, double pValue);
+	FbxAMatrix GetGeometry(FbxNode* pNode);
+	FbxAMatrix GetPoseMatrix(FbxPose* pPose, int pNodeIndex);
+	FbxAMatrix GetGlobalPosition(FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose = NULL, FbxAMatrix* pParentGlobalPosition = NULL);
 
 public:
 	gltfwriterVBO (FbxMesh *pMesh) { _pMesh =pMesh ; }
@@ -67,12 +81,18 @@ public:
 
 	std::vector<unsigned short> getIndices () { return (_out_indices) ; }
 	std::vector<FbxDouble3> getPositions () { return (_out_positions) ; }
+	std::vector<FbxDouble4> getJoints () { return (_out_joints) ; }
+	std::vector<FbxDouble4> getWeights() { return (_out_weights) ; }
 	std::vector<FbxDouble2> getUvs () { return (_out_uvs) ; }
 	std::vector<FbxDouble3> getNormals () { return( _out_normals) ; }
 	std::vector<FbxDouble3> getTangents () { return (_out_tangents) ; }
 	std::vector<FbxDouble3> getBinormals () { return (_out_binormals) ; }
 	std::vector<FbxColor> getVertexColors () { return (_out_vcolors) ; }
 	std::map<utility::string_t, utility::string_t> getUvSets () { return (_uvSets) ; }
+	void setJointNames(std::vector<std::string> jointNames) { _jointNames = jointNames; }
+	std::vector<std::string> getJointNames() { return _jointNames; }
+	std::vector<FbxAMatrix> getInverseBindMatrices() { return _inverseBindMatrices;}
+	
 
 protected:
 	FbxLayerElementNormal *elementNormals (int iLayer =-1) ;
@@ -82,9 +102,11 @@ protected:
 	FbxLayerElementVertexColor *elementVcolors (int iLayer =-1) ;
 public:
 	static FbxLayer *getLayer (FbxMesh *pMesh, FbxLayerElement::EType pType) ;
-
-} ;
-
+	void ComputeClusterDeformation(FbxAMatrix& pGlobalPosition, FbxMesh* pMesh, FbxCluster* pCluster, FbxAMatrix& pVertexTransformMatrix, FbxTime &pTime, FbxPose* pPose);
+	void ComputeLinearDeformation(FbxAMatrix& pGlobalPosition, FbxMesh* pMesh, FbxTime& pTime, FbxVector4* pVertexArray, FbxPose* pPose);
+	void ComputeDualQuaternionDeformation(FbxAMatrix& pGlobalPosition, FbxMesh* pMesh, FbxTime& pTime, FbxVector4* pVertexArray, FbxPose* pPose);
+	void ComputeSkinDeformation(FbxAMatrix& pGlobalPosition, FbxMesh* pMesh, FbxTime& pTime, FbxVector4* pVertexArray, FbxPose* pPose);
+};
 #ifdef __XX__
 template<class T>
 class gltfwriterVBOT {
