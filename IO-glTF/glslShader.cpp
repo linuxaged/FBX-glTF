@@ -277,7 +277,7 @@ bool glslTech::lighting1 (web::json::value technique, web::json::value gltf) {
 	web::json::value lights =gltf [U("lights")] ;
 	for ( auto iter =lights.as_object ().begin () ; iter != lights.as_object ().end () ; iter++ )
 		_bModelContainsLights |=iter->second.as_object () [U("type")].as_string () != U("ambient") ;
-	_bLightingIsEnabled =_bHasNormals && (_bModelContainsLights || true) ; // todo - default lighting option
+	_bLightingIsEnabled =_bHasNormals && (_bModelContainsLights && false) ; // todo - default lighting option
 	if ( _bLightingIsEnabled ) {
 		_fragmentShader.appendCode (U("vec3 normal =normalize (v_normal) ;\n")) ;
 		bool bDoubledSide =technique [U("extras")] [U("doubleSided")].as_bool () ;

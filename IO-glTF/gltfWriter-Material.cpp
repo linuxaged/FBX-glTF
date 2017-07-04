@@ -307,7 +307,7 @@ web::json::value gltfWriter::WritePhongMaterial (FbxNode *pNode, FbxSurfaceMater
 	FbxSurfacePhong *pPhongSurface =FbxCast<FbxSurfacePhong> (pMaterial) ;
 
 	web::json::value ret =web::json::value::object () ;
-	MergeJsonObjects (ret, WriteMaterialParameter (U("ambient"), pPhongSurface->Ambient, pPhongSurface->AmbientFactor.Get (), values, techniqueParameters)) ;
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("ambient"), pPhongSurface->Ambient, pPhongSurface->AmbientFactor.Get (), values, techniqueParameters)) ;
 	MergeJsonObjects (ret, WriteMaterialParameter (U("diffuse"), pPhongSurface->Diffuse, pPhongSurface->DiffuseFactor.Get (), values, techniqueParameters)) ;
 	MergeJsonObjects (ret, WriteMaterialParameter (U("emission"), pPhongSurface->Emissive, pPhongSurface->EmissiveFactor.Get (), values, techniqueParameters)) ;
 	MergeJsonObjects (ret, WriteMaterialParameter (U("specular"), pPhongSurface->Specular, pPhongSurface->SpecularFactor.Get (), values, techniqueParameters)) ;
@@ -437,10 +437,10 @@ web::json::value gltfWriter::WriteBlinnShadingModelMaterial (FbxNode *pNode, Fbx
 	web::json::value techniqueParameters =web::json::value::object () ;
 
 	web::json::value ret =web::json::value::object () ;
-	MergeJsonObjects (ret, WriteMaterialParameter (U("ambient"), pMaterial, FbxSurfaceMaterial::sAmbient, FbxSurfaceMaterial::sAmbientFactor, values, techniqueParameters)) ;
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("ambient"), pMaterial, FbxSurfaceMaterial::sAmbient, FbxSurfaceMaterial::sAmbientFactor, values, techniqueParameters)) ;
 	MergeJsonObjects (ret, WriteMaterialParameter (U("diffuse"), pMaterial, FbxSurfaceMaterial::sDiffuse, FbxSurfaceMaterial::sDiffuseFactor, values, techniqueParameters)) ;
 	MergeJsonObjects (ret, WriteMaterialParameter (U("emission"), pMaterial, FbxSurfaceMaterial::sEmissive, FbxSurfaceMaterial::sEmissiveFactor, values, techniqueParameters)) ;
-	MergeJsonObjects (ret, WriteMaterialParameter (U("specular"), pMaterial, FbxSurfaceMaterial::sSpecular, FbxSurfaceMaterial::sSpecularFactor, values, techniqueParameters)) ;
+	//MergeJsonObjects (ret, WriteMaterialParameter (U("specular"), pMaterial, FbxSurfaceMaterial::sSpecular, FbxSurfaceMaterial::sSpecularFactor, values, techniqueParameters)) ;
 	FbxPropertyT<FbxDouble> factorProperty =pMaterial->FindProperty (FbxSurfaceMaterial::sShininess, FbxDoubleDT, false) ;
 	//MergeJsonObjects (ret, WriteMaterialParameter (U("shininess"), factorProperty, values, techniqueParameters)) ;
 	FbxPropertyT<FbxDouble3> colorProperty =pMaterial->FindProperty (FbxSurfaceMaterial::sReflection, FbxDouble3DT, false) ;
