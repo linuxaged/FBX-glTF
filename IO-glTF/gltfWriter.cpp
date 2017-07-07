@@ -479,32 +479,32 @@ web::json::value gltfWriter::WriteSceneNodeRecursive (FbxNode *pNode, FbxPose *p
 	return (node) ;
 }
 
-web::json::value gltfWriter::WriteSkinArray(FbxNode *pNode, std::vector<FbxAMatrix> inverseBindMatrices, int skinAccessorCount, utility::string_t suffix) {
-
-   utility::string_t skinAccName;
-   web::json::value ret;
-   web::json::value accessorsAndBufferViews =web::json::value::object ({
-                { U("accessors"), web::json::value::object () },
-                { U("bufferViews"), web::json::value::object () }
-        }) ;
-
-    skinAccName = utility::conversions::to_string_t (U("_skinAccessor_")) ;
-    skinAccName += utility::conversions::to_string_t (suffix) ;
-    skinAccName += utility::conversions::to_string_t ((int)skinAccessorCount);
-
-    std::vector<float> inverseBindMatricesValues;
-
-    for(auto i=0; i < inverseBindMatrices.size(); i++)
-	for(auto j=0; j< 4; j++)
-		for (auto k=0;k<4;k++)
-			inverseBindMatricesValues.push_back(inverseBindMatrices[i].mData[j][k]);
-	
-    web::json::value skinAccessor =WriteArray <float>(inverseBindMatricesValues, 16, pNode, skinAccName.c_str(), 2) ;
-    ret = web::json::value::string (GetJsonFirstKey (skinAccessor [U("accessors")])) ;
-    MergeJsonObjects (accessorsAndBufferViews, skinAccessor) ;
-    MergeJsonObjects (_json, accessorsAndBufferViews) ;
-return ret;
-}
+//web::json::value gltfWriter::WriteSkinArray(FbxNode *pNode, std::vector<FbxAMatrix> inverseBindMatrices, int skinAccessorCount, utility::string_t suffix) {
+//
+//   utility::string_t skinAccName;
+//   web::json::value ret;
+//   web::json::value accessorsAndBufferViews =web::json::value::object ({
+//                { U("accessors"), web::json::value::object () },
+//                { U("bufferViews"), web::json::value::object () }
+//        }) ;
+//
+//    skinAccName = utility::conversions::to_string_t (U("_skinAccessor_")) ;
+//    skinAccName += utility::conversions::to_string_t (suffix) ;
+//    skinAccName += utility::conversions::to_string_t ((int)skinAccessorCount);
+//
+//    std::vector<float> inverseBindMatricesValues;
+//
+//    for(auto i=0; i < inverseBindMatrices.size(); i++)
+//	for(auto j=0; j< 4; j++)
+//		for (auto k=0;k<4;k++)
+//			inverseBindMatricesValues.push_back(inverseBindMatrices[i].mData[j][k]);
+//	
+//    web::json::value skinAccessor =WriteArray <float>(inverseBindMatricesValues, 16, pNode, skinAccName.c_str(), 2) ;
+//    ret = web::json::value::string (GetJsonFirstKey (skinAccessor [U("accessors")])) ;
+//    MergeJsonObjects (accessorsAndBufferViews, skinAccessor) ;
+//    MergeJsonObjects (_json, accessorsAndBufferViews) ;
+//return ret;
+//}
 
 web::json::value gltfWriter::WriteSceneNode (FbxNode *pNode, FbxPose *pPose) {
 
@@ -623,6 +623,19 @@ web::json::value gltfWriter::WriteNode (FbxNode *pNode) {
 	utility::string_t id =nodeId (pNode, false, true) ;
 	nodeDef [U("name")] =web::json::value::string (id) ;
 
+	//if ( szType == U("mesh") )
+	if (pNode->GetNodeAttribute() && pNode->GetNodeAttribute()->GetAttributeType() == FbxNodeAttribute::eMesh){
+		nodeDef[U("meshes")] = web::json::value::array({ { web::json::value(nodeId(pNode, true)) } });
+		// Link skin and mesh in gltf file
+		utility::string_t skinName;
+		web::json::value skeletons;
+		skinName = utility::conversions::to_string_t(id);
+		skinName += utility::conversions::to_string_t(U("_skin"));
+		nodeDef[U("skin")] = web::json::value::string(skinName);
+		skeletons[skeletons.size()] = _jointNames[0];
+		//nodeDef[U("skeletons")] = skeletons;
+	}
+
 	utility::string_t szType =utility::conversions::to_string_t (pNode->GetTypeName ()) ;
 	std::transform (szType.begin (), szType.end (), szType.begin (), ::tolower) ;
 	
@@ -679,18 +692,6 @@ web::json::value gltfWriter::WriteNode (FbxNode *pNode) {
 		//if (lSkeleton->GetSkeletonType() == FbxSkeleton::eRoot){
 		//	rootJoint = utility::conversions::to_string_t (id);
 		//}
-	}
-	//if ( szType == U("mesh") )
-	if ( pNode->GetNodeAttribute () && pNode->GetNodeAttribute ()->GetAttributeType () == FbxNodeAttribute::eMesh ){
-		nodeDef [U("meshes")] =web::json::value::array ({{ web::json::value (nodeId (pNode, true)) }}) ;
-		// Link skin and mesh in gltf file
-		utility::string_t skinName;
-		web::json::value skeletons;
-		skinName  = utility::conversions::to_string_t (id);
-		skinName += utility::conversions::to_string_t (U("_skin")) ;
-		nodeDef [U("skin")] =web::json::value::string (skinName);
-		skeletons[skeletons.size()] = _jointNames[0];
-		nodeDef [U("skeletons")] = skeletons;
 	}
 		//}
 	//if ( szType == U("camera") || szType == U("light") )

@@ -126,6 +126,7 @@ FbxArray<FbxVector4> gltfwriterVBO::GetVertexPositions (bool bInGeometry, bool b
 	if (pClusterCount)
 	{
 		// Deform the vertex array with the skin deformer.
+		pPose = nullptr;
 		ComputeSkinDeformation(globalPosition, _pMesh, pTime, pVertexArray, pPose);
 	}
 
@@ -651,7 +652,7 @@ void gltfwriterVBO::ComputeLinearDeformation(FbxAMatrix& pGlobalPosition,
 				{
 					continue;
 				}
-				std::string findString(lCluster->GetLink()->GetName());
+				utility::string_t findString = utility::conversions::to_string_t(lCluster->GetLink()->GetName());
 				std::transform (findString.begin(), findString.end(), findString.begin(), [](char ch) {
 						return ch == ' ' ? '_' : ch;
 						});
@@ -769,7 +770,7 @@ void gltfwriterVBO::ComputeDualQuaternionDeformation(FbxAMatrix& pGlobalPosition
 				if (lWeight == 0.0)
 					continue;
 
-				std::string findString(lCluster->GetLink()->GetName());
+				utility::string_t findString = utility::conversions::to_string_t(lCluster->GetLink()->GetName());
                                 std::transform (findString.begin(), findString.end(), findString.begin(), [](char ch) {
                                                 return ch == ' ' ? '_' : ch;
                                                 });

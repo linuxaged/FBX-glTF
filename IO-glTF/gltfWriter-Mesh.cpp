@@ -79,30 +79,50 @@ web::json::value gltfWriter::WriteMesh (FbxNode *pNode) {
 ////	{ U("colors"), web::json::value::object () }
 ////}) ;
 	web::json::value localAccessorsAndBufferViews =web::json::value::object () ;
-	std::vector<std::string> jointNames;
-	for(int i=0; i < _jointNames.size(); i++)
-		jointNames.push_back(_jointNames[i].as_string());
+	std::vector<utility::string_t> jointNames;
+	if (pMesh->GetDeformerCount(FbxDeformer::eSkin))
+	{
+		assert(_jointNames.is_array());
+		web::json::array joints = _jointNames.as_array();
+		for (int i = 0; i < joints.size(); i++)
+		{
+			if (joints[i].is_string())
+			{
+				jointNames.push_back(joints[i].as_string());
+			}
+			else
+			{
+				jointNames.push_back(U("UNKNOWN"));
+			}
+		}
+	}
+	
 
 	gltfwriterVBO vbo (pMesh) ;
-	vbo.setJointNames(jointNames);
+	if (pMesh->GetDeformerCount(FbxDeformer::eSkin))
+	{
+		assert(!jointNames.empty());
+		vbo.setJointNames(jointNames);
+	}
+	
 	vbo.GetLayerElements (true) ;
 	vbo.indexVBO () ;
 
 	std::vector<unsigned short> out_indices =vbo.getIndices () ;
 	std::vector<FbxDouble3> out_positions =vbo.getPositions () ;
-	std::vector<FbxDouble4> out_joints=vbo.getJoints () ;
-	std::vector<FbxDouble4> out_weights =vbo.getWeights () ;
 	std::vector<FbxDouble3> out_normals =vbo.getNormals () ;
 	std::vector<FbxDouble2> out_uvs =vbo.getUvs () ;
 	std::vector<FbxDouble3> out_tangents =vbo.getTangents () ;
 	std::vector<FbxDouble3> out_binormals =vbo.getBinormals () ;
 	std::vector<FbxColor> out_vcolors =vbo.getVertexColors () ;
-	std::vector<FbxAMatrix> inverseBindMatrices = vbo.getInverseBindMatrices();
 
 	_uvSets =vbo.getUvSets () ;
 
 	//skin
 	if (pMesh->GetDeformerCount(FbxDeformer::eSkin)) {
+		std::vector<FbxDouble4> out_joints = vbo.getJoints();
+		std::vector<FbxDouble4> out_weights = vbo.getWeights();
+		std::vector<FbxAMatrix> inverseBindMatrices = vbo.getInverseBindMatrices();
 
 		web::json::value skins = web::json::value::object ();
 		FbxAMatrix globalPosition;
@@ -115,7 +135,7 @@ web::json::value gltfWriter::WriteMesh (FbxNode *pNode) {
 		skinName  = utility::conversions::to_string_t (nodeId(pMesh->GetNode()));
 		skinName += utility::conversions::to_string_t (U("_skin")) ;
 		skins[skinName][U("bindShapeMatrix")] = shapeMat;
-		skins[skinName][U("inverseBindMatrices")] = WriteSkinArray(pMesh->GetNode(), inverseBindMatrices, 1, "skin");
+		skins[skinName][U("inverseBindMatrices")] = WriteSkinArray(pMesh->GetNode(), inverseBindMatrices, 1, U("skin"));
 		skins[skinName][U("jointNames")] = _jointNames;
 		_json[U("skins")] = skins;
 

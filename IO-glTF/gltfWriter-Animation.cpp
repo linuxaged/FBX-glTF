@@ -172,7 +172,7 @@ void getTRS(FbxAnimCurve* animCurve, FbxNode* pNode, std::vector<float> &trsKeyT
 
 void gltfWriter::WriteAnimationChannels(FbxNode* pNode, FbxAnimLayer* pAnimLayer)
 {
-
+	const char* nodeName = pNode->GetName();
     FbxAnimCurve* lAnimCurve = NULL;
     int     lCount;
     static int animCount = -1;
@@ -223,16 +223,16 @@ void gltfWriter::WriteAnimationChannels(FbxNode* pNode, FbxAnimLayer* pAnimLayer
     if(txAnimCurve|| tyAnimCurve || tzAnimCurve || rxAnimCurve || ryAnimCurve || rzAnimCurve || sxAnimCurve || syAnimCurve || szAnimCurve) {	
 
 
-	    channels[channels.size()] = WriteCurveChannels(aName, "translation", pNode, ++animAccessorCount);;
-	    parameters[U("translation")] = WriteAnimParameters(pNode, transAtTime, ++animAccessorCount, "translation");
-	    channels[channels.size()] = WriteCurveChannels(aName, "rotation", pNode, ++animAccessorCount); 
-	    parameters[U("rotation")] = WriteAnimParameters(pNode, rotAtTime, ++animAccessorCount, "rotation");
-	    channels[channels.size()] = WriteCurveChannels(aName, "scale", pNode, ++animAccessorCount); 
-	    parameters[U("scale")]    = WriteAnimParameters(pNode, scaleAtTime, ++animAccessorCount, "scale");
+	    channels[channels.size()] = WriteCurveChannels(aName, U("translation"), pNode, ++animAccessorCount);;
+	    parameters[U("translation")] = WriteAnimParameters(pNode, transAtTime, ++animAccessorCount, U("translation"));
+	    channels[channels.size()] = WriteCurveChannels(aName, U("rotation"), pNode, ++animAccessorCount); 
+	    parameters[U("rotation")] = WriteAnimParameters(pNode, rotAtTime, ++animAccessorCount, U("rotation"));
+	    channels[channels.size()] = WriteCurveChannels(aName, U("scale"), pNode, ++animAccessorCount); 
+	    parameters[U("scale")]    = WriteAnimParameters(pNode, scaleAtTime, ++animAccessorCount, U("scale"));
     }
 
     if (channels.size() && parameters.size()){
-	    parameters[U("TIME")] = WriteAnimParameters(pNode, trsKeyTime, ++animAccessorCount, "TIME");
+	    parameters[U("TIME")] = WriteAnimParameters(pNode, trsKeyTime, ++animAccessorCount, U("TIME"));
 	    _json [U("animations")][aName][U("channels")] = channels;
 	    _json [U("animations")][aName][U("parameters")] = parameters;
     }
