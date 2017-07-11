@@ -20,9 +20,9 @@
 //
 #include "StdAfx.h"
 #include "gltfWriter.h"
-#ifdef _DEBUG
+//#ifdef _DEBUG
 #include "JsonPrettify.h"
-#endif
+//#endif
 
 #include <stdlib.h>
 //#define _DEBUG_VERBOSE 1
@@ -96,12 +96,12 @@ bool gltfWriter::FileCreate (char *pFileName) {
 
 bool gltfWriter::FileClose () {
 	PrepareForSerialization () ;
-#ifdef _DEBUG
+//#ifdef _DEBUG
 	JsonPrettify prettify (_json) ;
 	prettify.serialize (_gltf) ;
-#else
-	_json.serialize (_gltf) ;
-#endif
+//#else
+//	_json.serialize (_gltf) ;
+//#endif
 	_gltf.close () ;
 
 	// If media saved in file, gltfWriter::PostprocessScene / gltfWriter::WriteBuffer should have embed the data already
