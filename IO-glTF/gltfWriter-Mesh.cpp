@@ -83,17 +83,22 @@ web::json::value gltfWriter::WriteMesh (FbxNode *pNode) {
 	if (pMesh->GetDeformerCount(FbxDeformer::eSkin))
 	{
 		assert(_jointNames.is_array());
+		if (_jointNames.is_array() == false)
+		{
+			MessageBox(NULL, L"There is no joint in the skins node!", L"_jointNames is NULL", MB_OK);
+		}
 		web::json::array joints = _jointNames.as_array();
 		for (int i = 0; i < joints.size(); i++)
 		{
 			if (joints[i].is_string())
 			{
-				jointNames.push_back(joints[i].as_string());
+				utility::string_t temp = joints[i].as_string();
+				jointNames.push_back( temp );
 			}
-			else
-			{
-				jointNames.push_back(U("UNKNOWN"));
-			}
+			//else
+			//{
+			//	jointNames.push_back(U("UNKNOWN"));
+			//}
 		}
 	}
 	
