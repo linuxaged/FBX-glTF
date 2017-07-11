@@ -23,34 +23,45 @@
 
 namespace _IOglTF_NS_ {
 
-int GetNumberOfAnimationFrames(FbxScene* pScene)
-{
-    FbxTimeSpan interval;
-    FbxNode* pRootNode = pScene->GetRootNode();
-
-	if (pRootNode->GetAnimationInterval(interval))
+	int GetNumberOfAnimationFrames(FbxScene* pScene)
 	{
-		FbxTime start = interval.GetStart();
-		FbxTime end = interval.GetStop();
+		FbxTimeSpan interval;
+		FbxNode* pRootNode = pScene->GetRootNode();
 
-		FbxLongLong longstart = start.GetFrameCount();
-		FbxLongLong longend = end.GetFrameCount();
+		if (pRootNode->GetAnimationInterval(interval))
+		{
+			FbxTime start = interval.GetStart();
+			FbxTime end = interval.GetStop();
 
-		return int(longend - longstart);
+			FbxLongLong longstart = start.GetFrameCount();
+			FbxLongLong longend = end.GetFrameCount();
+
+			return int(longend - longstart);
+		}
+
+		return 0;
 	}
 
-	return 0;
-}
+	web::json::value gltfWriter::WriteSkeleton(FbxNode *pNode) {
+		const FbxNodeAttribute *nodeAttribute = pNode->GetParent()->GetNodeAttribute();
+		web::json::value node = WriteNode(pNode);
+		web::json::value ret = web::json::value::object({ { U("nodes"), node } });
 
-web::json::value gltfWriter::WriteSkeleton(FbxNode *pNode) {
-	const FbxNodeAttribute *nodeAttribute =pNode->GetParent()->GetNodeAttribute () ;
-	web::json::value node = WriteNode (pNode) ;
-	web::json::value ret  = web::json::value::object ({ { U("nodes"), node } }) ;
+		utility::string_t id = nodeId(pNode, false, true);
+		spaceToUnderscore(id);
+		if (nodeAttribute && nodeAttribute->GetAttributeType() == FbxNodeAttribute::eSkeleton)
+			_jointNames[_jointNames.size()] = web::json::value::string(id);
 
-	utility::string_t id =nodeId (pNode, false, true) ;
-	spaceToUnderscore(id);
-	if ( nodeAttribute && nodeAttribute->GetAttributeType () == FbxNodeAttribute::eSkeleton ) 
-		_jointNames[_jointNames.size()] = web::json::value::string (id);
+		if (_jointNames.is_array())
+		{
+			for (int i = 0; i < _jointNames.size(); i++)
+			{
+				if (_jointNames[i].is_string())
+				{
+					utility::string_t temp = _jointNames[i].as_string();
+				}
+			}
+		}
 	return ret;	
 }
 
