@@ -55,6 +55,12 @@ web::json::value gltfWriter::WriteTexture (FbxTexture *pTexture) {
 		//"PVRTexTool\PVRTexToolCLI.exe" - i "vlcsnap-2017-04-20-19h25m31s402.png" - o "vlcsnap-2017-04-20-19h25m31s402.ktx" - f ETC2_RGB - q etcfast - m
 		utility::string_t inImagePath = utility::conversions::to_string_t(imageFile.Buffer());
 		auto pos = inImagePath.rfind(U(".jpg"));
+		if ( pos == utility::string_t::npos )
+		{
+			pos = inImagePath.rfind(U(".png"));
+			if (pos == utility::string_t::npos)
+				assert(false);
+		}
 		utility::string_t outImagePath = inImagePath;
 		outImagePath.replace(pos, utility::string_t(U(".jpg")).length(), U(".ktx"));
 
