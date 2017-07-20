@@ -61,7 +61,7 @@ private:
 	std::map<FbxUInt64, utility::string_t> _IDs ;
 	std::vector<utility::string_t> _registeredNames ;
 	std::map<utility::string_t, utility::string_t> _uvSets ;
-	web::json::value _jointNames;
+	web::json::value _skinJointNames;
 #ifdef _DEBUG
 	std::vector<utility::string_t> _path ;
 #endif
@@ -120,7 +120,7 @@ protected:
 
 	// skin
 	web::json::value WriteSkin(FbxMesh *pMesh);
-	web::json::value getJointNames() {return _jointNames; }
+	web::json::value getJointNames() {return _skinJointNames; }
 	web::json::value WriteSkinArray(FbxNode *pNode, std::vector<FbxAMatrix> vertexArray, int skinAccessorCount, utility::string_t suffix); 
 
 	// animation
@@ -270,10 +270,18 @@ web::json::value gltfWriter::WriteMatrixArray (std::vector<T> &data, FbxNode *pN
 	std::vector<Type> fdata (nb * size ) ;
 	for ( int i =0 ; i < nb ; i++ )
 		for ( int row =0 ; row < 4 ; row++ ) 
-			for ( int col =0 ; col < 4; col++ ) 
-					fdata [i * size + row+col] =data[i].mData[row][col] ;
-	//for (int i=0; i< fdata.size(); i++)
-	//	std::cout << "i: " << i << ";" << fdata[i] << "\n"; 
+			for (int col = 0; col < 4; col++)
+			{
+				float dval = (float) data[i].mData[row][col];
+				ucout << dval << " ";
+				if (row == 3)
+				{
+					ucout << "\n";
+				}
+				fdata[i * size + row * 4 + col] = static_cast<Type>(dval);
+			}
+	for (int i=0; i< fdata.size(); i++)
+		ucout << "i: " << i << ";" << fdata[i] << "\n"; 
 					
 	return (WriteArray<Type> (fdata, size, pNode, suffix, 2)) ;
 }

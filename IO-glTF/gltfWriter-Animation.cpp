@@ -50,15 +50,11 @@ namespace _IOglTF_NS_ {
 		utility::string_t id = nodeId(pNode, false, true);
 		spaceToUnderscore(id);
 		if (nodeAttribute && nodeAttribute->GetAttributeType() == FbxNodeAttribute::eSkeleton)
-			_jointNames[_jointNames.size()] = web::json::value::string(id);
+			_skinJointNames[_skinJointNames.size()] = web::json::value::string(id);
 
-		if (_jointNames.is_array())
 		{
-			for (int i = 0; i < _jointNames.size(); i++)
 			{
-				if (_jointNames[i].is_string())
 				{
-					utility::string_t temp = _jointNames[i].as_string();
 				}
 			}
 		}

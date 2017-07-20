@@ -617,50 +617,37 @@ web::json::value gltfWriter::GetTransform (FbxNode *pNode) {
 }
 
 //-----------------------------------------------------------------------------
-web::json::value gltfWriter::WriteNode (FbxNode *pNode) {
-	web::json::value nodeDef =web::json::value::object () ;
+web::json::value gltfWriter::WriteNode(FbxNode *pNode) {
+	web::json::value nodeDef = web::json::value::object();
 
-	utility::string_t id =nodeId (pNode, false, true) ;
-	nodeDef [U("name")] =web::json::value::string (id) ;
+	utility::string_t id = nodeId(pNode, false, true);
+	nodeDef[U("name")] = web::json::value::string(id);
 
-	//if ( szType == U("mesh") )
-	if (pNode->GetNodeAttribute() && pNode->GetNodeAttribute()->GetAttributeType() == FbxNodeAttribute::eMesh){
-		nodeDef[U("meshes")] = web::json::value::array({ { web::json::value(nodeId(pNode, true)) } });
-		// Link skin and mesh in gltf file
-		utility::string_t skinName;
-		web::json::value skeletons;
-		skinName = utility::conversions::to_string_t(id);
-		skinName += utility::conversions::to_string_t(U("_skin"));
-		nodeDef[U("skin")] = web::json::value::string(skinName);
-		skeletons[skeletons.size()] = _jointNames[0];
-		//nodeDef[U("skeletons")] = skeletons;
-	}
+	utility::string_t szType = utility::conversions::to_string_t(pNode->GetTypeName());
+	std::transform(szType.begin(), szType.end(), szType.begin(), ::tolower);
 
-	utility::string_t szType =utility::conversions::to_string_t (pNode->GetTypeName ()) ;
-	std::transform (szType.begin (), szType.end (), szType.begin (), ::tolower) ;
-	
 	// A floating-point 4x4 transformation matrix stored in column-major order.
 	// A node will have either a matrix property defined or any combination of rotation, scale, and translation properties defined.
 	// If the mesh is a skin binded to a skeleton, the bind pose will include its transformations.
 	// In that case, do not export the transforms twice.
-	const FbxNodeAttribute *nodeAttr =pNode->GetNodeAttribute () ;
-	if ( nodeAttr && nodeAttr->GetAttributeType () != FbxNodeAttribute::eSkeleton ) {
-		web::json::value nodeTransform =GetTransform (pNode) ;
-		nodeDef [U("matrix")] =nodeTransform ;
-	}
+	//const FbxNodeAttribute *nodeAttr = pNode->GetNodeAttribute();
+	//if (nodeAttr && nodeAttr->GetAttributeType() != FbxNodeAttribute::eSkeleton) {
+		web::json::value nodeTransform = GetTransform(pNode);
+		nodeDef[U("matrix")] = nodeTransform;
+	//}
 	//nodeDef [U("rotation")] =web::json::value::array ({{ 1., 0., 0., 0. }}) ;
 	//nodeDef [U("scale")] =web::json::value::array ({{ 1., 1., 1. }}) ;
 	//nodeDef [U("translation")] =web::json::value::array ({{ 0., 0., 0. }}) ;
 
-	nodeDef [U("children")] =web::json::value::array () ;
+	nodeDef[U("children")] = web::json::value::array();
 	//nodeDef [U("instanceSkin")] = ;
-		// Link skin and mesh in gltf file
+	// Link skin and mesh in gltf file
 
-	const FbxNodeAttribute *nodeAttribute =pNode->GetNodeAttribute () ;
-	if ( nodeAttribute && nodeAttribute->GetAttributeType () == FbxNodeAttribute::eSkeleton ) {
+	const FbxNodeAttribute *nodeAttribute = pNode->GetNodeAttribute();
+	if (nodeAttribute && nodeAttribute->GetAttributeType() == FbxNodeAttribute::eSkeleton) {
 		// The only difference between a node containing a nullptr and one containing a SKELETON is the property type JOINT.
 		//nodeDef [U("jointName")] =web::json::value::string (U("JOINT")) ;
-		nodeDef [U("jointName")] =web::json::value::string (id) ;
+		nodeDef[U("jointName")] = web::json::value::string(id);
 		web::json::value translation;
 		web::json::value rotation;
 		web::json::value scale;
@@ -670,7 +657,7 @@ web::json::value gltfWriter::WriteNode (FbxNode *pNode) {
 		FbxMatrix localMtx(localAffineMtx);
 
 		// Decompose.
-		double sign; 
+		double sign;
 		FbxVector4 T, S, Sh;
 		FbxQuaternion Rq;
 		localMtx.GetElements(T, Rq, Sh, S, sign);
@@ -679,13 +666,13 @@ web::json::value gltfWriter::WriteNode (FbxNode *pNode) {
 
 		// Store
 		for (int i = 0; i < 3; i++) translation[translation.size()] = T[i];
-		for (int i = 0; i < 4; i++) rotation[rotation.size()]= Rq.GetAt(i);
+		for (int i = 0; i < 4; i++) rotation[rotation.size()] = Rq.GetAt(i);
 		for (int i = 0; i < 3; i++) scale[scale.size()] = 1;
 
 
-		nodeDef [U("translation")] =translation;
-		nodeDef [U("rotation")] =rotation;
-		nodeDef [U("scale")] =scale;
+		nodeDef[U("translation")] = translation;
+		nodeDef[U("rotation")] = rotation;
+		nodeDef[U("scale")] = scale;
 
 
 		//FbxSkeleton* lSkeleton = (FbxSkeleton*) pNode->GetNodeAttribute();
@@ -693,15 +680,27 @@ web::json::value gltfWriter::WriteNode (FbxNode *pNode) {
 		//	rootJoint = utility::conversions::to_string_t (id);
 		//}
 	}
-		//}
+	//if ( szType == U("mesh") )
+	if (pNode->GetNodeAttribute() && pNode->GetNodeAttribute()->GetAttributeType() == FbxNodeAttribute::eMesh){
+		nodeDef[U("meshes")] = web::json::value::array({ { web::json::value(nodeId(pNode, true)) } });
+		// Link skin and mesh in gltf file
+		utility::string_t skinName;
+		web::json::value skeletons;
+		skinName = utility::conversions::to_string_t(id);
+		skinName += utility::conversions::to_string_t(U("_skin"));
+		nodeDef[U("skin")] = web::json::value::string(skinName);
+		skeletons[skeletons.size()] = _skinJointNames[0];
+		nodeDef[U("skeletons")] = skeletons;
+	}
+	//}
 	//if ( szType == U("camera") || szType == U("light") )
-	if (   pNode->GetNodeAttribute ()
-		&& (   pNode->GetNodeAttribute ()->GetAttributeType () == FbxNodeAttribute::eCamera
-			|| pNode->GetNodeAttribute ()->GetAttributeType () == FbxNodeAttribute::eLight)
-	)
-		nodeDef [szType] =web::json::value::string (nodeId (pNode, true)) ; //nodeDef [U("camera")] nodeDef [U("light")]
+	if (pNode->GetNodeAttribute()
+		&& (pNode->GetNodeAttribute()->GetAttributeType() == FbxNodeAttribute::eCamera
+		|| pNode->GetNodeAttribute()->GetAttributeType() == FbxNodeAttribute::eLight)
+		)
+		nodeDef[szType] = web::json::value::string(nodeId(pNode, true)); //nodeDef [U("camera")] nodeDef [U("light")]
 
-	return (web::json::value::object ({{ id, nodeDef }})) ;
+	return (web::json::value::object({ { id, nodeDef } }));
 }
 
 

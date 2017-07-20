@@ -571,8 +571,8 @@ web::json::value gltfWriter::WriteSkin(FbxMesh *pMesh) {
 	FbxVector4* pVertexArray = NULL;
 
 	std::vector<utility::string_t> jointNames;
-	for(int i=0; i < _jointNames.size(); i++)
-		jointNames.push_back(_jointNames[i].as_string());
+	for(int i=0; i < _skinJointNames.size(); i++)
+		jointNames.push_back(_skinJointNames[i].as_string());
 		
 
 	if (pVertexCount) {
@@ -601,7 +601,7 @@ web::json::value gltfWriter::WriteSkin(FbxMesh *pMesh) {
 
 	skins[skinName][U("bindShapeMatrix")] = shapeMat;
 	skins[skinName][U("inverseBindMatrices")] = WriteSkinArray(pMesh->GetNode(), inverseBindMatrices, 1, U("skin"));
-	skins[skinName][U("jointNames")] = _jointNames;
+	skins[skinName][U("jointNames")] = _skinJointNames;
 
    return (skins);
 }

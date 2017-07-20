@@ -82,12 +82,12 @@ web::json::value gltfWriter::WriteMesh (FbxNode *pNode) {
 	std::vector<utility::string_t> jointNames;
 	if (pMesh->GetDeformerCount(FbxDeformer::eSkin))
 	{
-		assert(_jointNames.is_array());
-		if (_jointNames.is_array() == false)
+		assert(_skinJointNames.is_array());
+		if (_skinJointNames.is_array() == false)
 		{
 			MessageBox(NULL, L"There is no joint in the skins node!", L"_jointNames is NULL", MB_OK);
 		}
-		web::json::array joints = _jointNames.as_array();
+		web::json::array joints = _skinJointNames.as_array();
 		for (int i = 0; i < joints.size(); i++)
 		{
 			if (joints[i].is_string())
@@ -141,7 +141,8 @@ web::json::value gltfWriter::WriteMesh (FbxNode *pNode) {
 		skinName += utility::conversions::to_string_t (U("_skin")) ;
 		skins[skinName][U("bindShapeMatrix")] = shapeMat;
 		skins[skinName][U("inverseBindMatrices")] = WriteSkinArray(pMesh->GetNode(), inverseBindMatrices, 1, U("skin"));
-		skins[skinName][U("jointNames")] = _jointNames;
+		
+		skins[skinName][U("jointNames")] = _skinJointNames;
 		_json[U("skins")] = skins;
 
 		web::json::value vertexJoints =WriteArrayWithMinMax<FbxDouble4, float> (out_joints, pMesh->GetNode (), U("_Joints")) ;

@@ -42,7 +42,7 @@ void gltfWriter::AdditionalTechniqueParameters (FbxNode *pNode, web::json::value
 //d:\projects\gltf\converter\collada2gltf\shaders\commonprofileshaders.cpp #905
 	if ( hasSkinning ) {
 		techniqueParameters [U("jointMat")] =web::json::value::object ({ // joint matrix
-				{ U("count"), web::json::value::number((int) _jointNames.size()) },
+				{ U("count"), web::json::value::number((int) _skinJointNames.size()) },
 				{ U("semantic"), web::json::value::string (U("JOINTMATRIX")) },
 				{ U("type"), web::json::value::number ((int)IOglTF::FLOAT_MAT4) }
 				}) ;
